@@ -80,30 +80,6 @@ The installer will:
 
 ---
 
-## Manual Setup
-
-```bash
-# Install dependencies
-pip install pillow requests arabic-reshaper python-bidi
-
-# Download Quran data (one time only)
-python fetch_quran_data.py
-
-# Configure theme and settings
-python setup_wizard.py
-
-# Register Task Scheduler (logon only)
-python install_task.py
-
-# Or: logon + every 60 minutes
-python install_task.py --interval 60
-
-# Run immediately
-python wallpaper_generator.py
-```
-
----
-
 ## Configuration
 
 Settings are stored in `config.json`. Edit it anytime — changes take effect on next run.

@@ -7,7 +7,7 @@ as the Windows desktop background.
 
 Fully offline after the one-time data fetch (fetch_quran_data.py).
 
-Author  : <your-name>
+Author  : CyberMajeed
 License : MIT
 """
 
@@ -89,7 +89,7 @@ THEMES = {
     },
     "slate": {
         "name": "Slate",
-        "background_color": "#1e2433",
+        "background_color": "#1d2230",
         "text_color_arabic": "#e2e8f0",
         "text_color_translation": "#94a3b8",
         "text_color_reference": "#4a5568",
@@ -97,7 +97,7 @@ THEMES = {
     },
     "forest": {
         "name": "Forest",
-        "background_color": "#0f1f0f",
+        "background_color": "#0E1E0E",
         "text_color_arabic": "#c8e6c9",
         "text_color_translation": "#a5d6a7",
         "text_color_reference": "#4a7a4a",
@@ -105,31 +105,31 @@ THEMES = {
     },
     "desert": {
         "name": "Desert Sand",
-        "background_color": "#2e1f0f",
-        "text_color_arabic": "#f0d9a0",
-        "text_color_translation": "#d4b870",
-        "text_color_reference": "#8a6030",
-        "decorative_color": "#8a6030",
+        "background_color": "#4D2E10",
+        "text_color_arabic": "#ab9351",
+        "text_color_translation": "#76612c",
+        "text_color_reference": "#825b30",
+        "decorative_color": "#7E4C1A",
     },
     "ivory": {
         "name": "Ivory Minimal",
-        "background_color": "#fafaf8",
-        "text_color_arabic": "#1a1a1a",
-        "text_color_translation": "#3d3d3d",
-        "text_color_reference": "#999999",
-        "decorative_color": "#cccccc",
+        "background_color": "#ffffa9",
+        "text_color_arabic": "#1b1b1a",
+        "text_color_translation": "#2f2f2f",
+        "text_color_reference": "#7A7979",
+        "decorative_color": "#878787",
     },
     "deep_teal": {
         "name": "Deep Teal",
-        "background_color": "#0a1628",
-        "text_color_arabic": "#80cbc4",
-        "text_color_translation": "#4db6ac",
-        "text_color_reference": "#2a6b66",
-        "decorative_color": "#2a6b66",
+        "background_color": "#091527",
+        "text_color_arabic": "#abece6",
+        "text_color_translation": "#7cccc4",
+        "text_color_reference": "#2d847c",
+        "decorative_color": "#539d97",
     },
     "rose_noir": {
         "name": "Rose Noir",
-        "background_color": "#1a0a0f",
+        "background_color": "#210f15",
         "text_color_arabic": "#f8c8d0",
         "text_color_translation": "#e8a0b0",
         "text_color_reference": "#7a3545",
@@ -210,7 +210,7 @@ def save_cache(seen: set, max_size: int) -> None:
 
 
 # ─────────────────────────────────────────────
-# QURAN DATA  (fully offline)
+# QURAN DATA
 # ─────────────────────────────────────────────
 def load_quran_db() -> list:
     if not QURAN_DB.exists():
