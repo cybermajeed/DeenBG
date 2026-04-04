@@ -51,7 +51,7 @@ def _ask_int(prompt: str, default: int, lo: int, hi: int) -> int:
 
 def run():
     print("\n" + "═" * 58)
-    print("  🌙  DeenBG — Setup Wizard")
+    print("    DeenBG — Setup Wizard")
     print("═" * 58)
     print("  Press Enter to accept [default] values.\n")
 

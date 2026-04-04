@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🌙 DeenBG
+# DeenBG
 
 ### Quran Wallpaper Generator for Windows
 
-*A beautiful, fully offline desktop wallpaper that displays a new Quran ayah every time you log in.*
+_A beautiful, fully offline desktop wallpaper that displays a new Quran ayah every time you log in._
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows)
@@ -25,17 +25,17 @@ After a single one-time data download, it runs **completely offline**.
 
 ## Theme Previews
 
-|                                                 |                                         |
-| ----------------------------------------------- | --------------------------------------- |
-| **Midnight Blue**                         | **Obsidian**                      |
+|                                                   |                                           |
+| ------------------------------------------------- | ----------------------------------------- |
+| **Midnight Blue**                                 | **Obsidian**                              |
 | ![Midnight Blue](docs/previews/midnight_blue.png) | ![Obsidian](docs/previews/obsidian.png)   |
-| **Charcoal & Gold**                       | **Parchment**                     |
+| **Charcoal & Gold**                               | **Parchment**                             |
 | ![Charcoal Gold](docs/previews/charcoal_gold.png) | ![Parchment](docs/previews/parchment.png) |
-| **Slate**                                 | **Forest**                        |
+| **Slate**                                         | **Forest**                                |
 | ![Slate](docs/previews/slate.png)                 | ![Forest](docs/previews/forest.png)       |
-| **Desert Sand**                           | **Ivory Minimal**                 |
+| **Desert Sand**                                   | **Ivory Minimal**                         |
 | ![Desert](docs/previews/desert.png)               | ![Ivory](docs/previews/ivory.png)         |
-| **Deep Teal**                             | **Rose Noir**                     |
+| **Deep Teal**                                     | **Rose Noir**                             |
 | ![Deep Teal](docs/previews/deep_teal.png)         | ![Rose Noir](docs/previews/rose_noir.png) |
 
 ---
@@ -128,8 +128,8 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 
 ### Available Themes
 
-| Key               | Name            | Style                        |
-| ----------------- | --------------- | ---------------------------- |
+| Key             | Name            | Style                        |
+| --------------- | --------------- | ---------------------------- |
 | `midnight_blue` | Midnight Blue   | Dark navy, warm cream text   |
 | `obsidian`      | Obsidian        | Pure black, white text       |
 | `charcoal_gold` | Charcoal & Gold | Dark charcoal, golden Arabic |
@@ -145,12 +145,12 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 
 Set `api.translation_edition` in `config.json`, then re-run `fetch_quran_data.py --force`:
 
-| Value            | Translation                           |
-| ---------------- | ------------------------------------- |
+| Value          | Translation                         |
+| -------------- | ----------------------------------- |
 | `en.sahih`     | Saheeh International*(recommended)* |
-| `en.pickthall` | Pickthall                             |
-| `en.yusufali`  | Yusuf Ali                             |
-| `en.asad`      | Muhammad Asad                         |
+| `en.pickthall` | Pickthall                           |
+| `en.yusufali`  | Yusuf Ali                           |
+| `en.asad`      | Muhammad Asad                       |
 
 ---
 
