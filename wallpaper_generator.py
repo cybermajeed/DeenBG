@@ -81,7 +81,7 @@ THEMES = {
     },
     "parchment": {
         "name": "Parchment",
-        "background_color": "#f5ead0",
+        "background_color": "#e0d3bd",
         "text_color_arabic": "#2c1810",
         "text_color_translation": "#4a3020",
         "text_color_reference": "#8a6040",
@@ -105,11 +105,11 @@ THEMES = {
     },
     "desert": {
         "name": "Desert Sand",
-        "background_color": "#4D2E10",
-        "text_color_arabic": "#ab9351",
-        "text_color_translation": "#76612c",
-        "text_color_reference": "#825b30",
-        "decorative_color": "#7E4C1A",
+        "background_color": "#442A10",
+        "text_color_arabic": "#dbc484",
+        "text_color_translation": "#a38e59",
+        "text_color_reference": "#bb8c5b",
+        "decorative_color": "#AC7743",
     },
     "ivory": {
         "name": "Ivory Minimal",
@@ -121,7 +121,7 @@ THEMES = {
     },
     "deep_teal": {
         "name": "Deep Teal",
-        "background_color": "#091527",
+        "background_color": "#0E1A2C",
         "text_color_arabic": "#abece6",
         "text_color_translation": "#7cccc4",
         "text_color_reference": "#2d847c",
