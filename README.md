@@ -2,9 +2,9 @@
 
 # DeenBG
 
-### Quran Wallpaper Generator for Windows
+### Automated Quran Wallpaper Generator for Windows
 
-_A beautiful, fully offline desktop wallpaper that displays a new Quran ayah every time you log in._
+A Windows automation tool that sets a random Quranic verse as your wallpaper on every login, serving as a gentle reminder to stay connected to the Quran.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows)
@@ -21,31 +21,29 @@ _A beautiful, fully offline desktop wallpaper that displays a new Quran ayah eve
 
 More than just a wallpaper changer, DeenBG turns your everyday screen time into a moment of reflection. Without interrupting your workflow, it gently reminds you of the Quran throughout the day, helping you stay connected to your deen, improve familiarity with ayahs, and build a consistent habit of remembrance effortlessly.
 
-> After a single one-time data download, it runs **completely offline**.
-
 ---
 
 ## Available Themes
 
-|                                                 |                                         |
-| ----------------------------------------------- | --------------------------------------- |
-| **Midnight Blue**                         | **Obsidian**                      |
+|                                                   |                                           |
+| ------------------------------------------------- | ----------------------------------------- |
+| **Midnight Blue**                                 | **Obsidian**                              |
 | ![Midnight Blue](docs/previews/midnight_blue.png) | ![Obsidian](docs/previews/obsidian.png)   |
-| **Charcoal & Gold**                       | **Parchment**                     |
+| **Charcoal & Gold**                               | **Parchment**                             |
 | ![Charcoal Gold](docs/previews/charcoal_gold.png) | ![Parchment](docs/previews/parchment.png) |
-| **Slate**                                 | **Forest**                        |
+| **Slate**                                         | **Forest**                                |
 | ![Slate](docs/previews/slate.png)                 | ![Forest](docs/previews/forest.png)       |
-| **Desert Sand**                           | **Ivory Minimal**                 |
+| **Desert Sand**                                   | **Ivory Minimal**                         |
 | ![Desert](docs/previews/desert.png)               | ![Ivory](docs/previews/ivory.png)         |
-| **Deep Teal**                             | **Rose Noir**                     |
+| **Deep Teal**                                     | **Rose Noir**                             |
 | ![Deep Teal](docs/previews/deep_teal.png)         | ![Rose Noir](docs/previews/rose_noir.png) |
 
 ---
 
 ## Preview
 
-|                                            |                                       |
-| ------------------------------------------ | ------------------------------------- |
+|                                              |                                         |
+| -------------------------------------------- | --------------------------------------- |
 | ![Midnight Blue](docs/previews/preview1.png) | ![Obsidian](docs/previews/preview2.png) |
 
 ## Features
@@ -128,8 +126,8 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 
 Set `api.translation_edition` in `config.json`, then re-run `fetch_quran_data.py --force`:
 
-| Value            | Translation                        |
-| ---------------- | ---------------------------------- |
+| Value          | Translation                        |
+| -------------- | ---------------------------------- |
 | `en.sahih`     | Saheeh International (recommended) |
 | `en.pickthall` | Pickthall                          |
 | `en.yusufali`  | Yusuf Ali                          |
