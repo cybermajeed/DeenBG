@@ -1,6 +1,6 @@
 # Ignore generated cache and log directories
-cache/
-logs/
+cache/*
+logs/*
 
 # Python compiled files
 __pycache__/
