@@ -5,8 +5,6 @@ Picks a random Quran ayah from the local offline database,
 renders it as a beautiful desktop wallpaper, and sets it
 as the Windows desktop background.
 
-Fully offline after the one-time data fetch (fetch_quran_data.py).
-
 Author  : CyberMajeed
 License : MIT
 """
