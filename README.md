@@ -25,7 +25,7 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 
 ---
 
-## Theme Previews
+## Available Themes
 
 |                                                   |                                           |
 | ------------------------------------------------- | ----------------------------------------- |
@@ -41,6 +41,12 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 | ![Deep Teal](docs/previews/deep_teal.png)         | ![Rose Noir](docs/previews/rose_noir.png) |
 
 ---
+
+## Preview
+
+|                                              |                                         |
+| -------------------------------------------- | --------------------------------------- |
+| ![Midnight Blue](docs/previews/preview1.png) | ![Obsidian](docs/previews/preview2.png) |
 
 ## Features
 
