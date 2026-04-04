@@ -69,9 +69,11 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 ### Install
 
 ```
-1. Unzip DeenBG to a permanent folder, e.g.:  C:\Users\You\DeenBG\
-3. Run install.bat
-4. Follow the prompts
+
+1. Unzip DeenBG to a permanent folder, e.g.: C:\Users\You\DeenBG\
+2. Run install.bat as Administrator
+3. Follow the prompts
+
 ```
 
 The installer will:
