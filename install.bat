@@ -6,6 +6,8 @@ echo.
 echo  ============================================================
 echo    DeenBG ^| Quran Wallpaper Generator ^| Installer
 echo  ============================================================
+echo    BISMILLAH
+echo  ============================================================
 echo.
 
 :: ── Python check ─────────────────────────────────────────────
@@ -22,6 +24,7 @@ echo  [OK] Python %PV% detected.
 :: ── Packages ──────────────────────────────────────────────────
 echo.
 echo  Installing Python packages...
+echo.
 python -m pip install --upgrade pip --quiet
 python -m pip install pillow requests arabic-reshaper python-bidi --quiet
 if errorlevel 1 (
@@ -92,7 +95,7 @@ if /i "!NOW!"=="y" (
 echo.
 echo  ============================================================
 echo   DeenBG is ready!
-echo   Your wallpaper will update at every login.
+echo   Your wallpaper will update at every system login.
 echo  ============================================================
 echo.
 pause
