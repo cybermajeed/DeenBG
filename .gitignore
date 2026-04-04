@@ -1,7 +1,7 @@
 # Ignore generated cache and log directories
 cache/*
 logs/*
-# wallpapers/*
+wallpapers/*
 
 # Python compiled files
 __pycache__/
