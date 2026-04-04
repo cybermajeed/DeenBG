@@ -10,4 +10,4 @@ __pycache__/
 # Local config
 config.json
 
-wallpapers/
+wallpapers/*
