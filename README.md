@@ -17,9 +17,11 @@ _A beautiful, fully offline desktop wallpaper that displays a new Quran ayah eve
 
 ## What is DeenBG?
 
-DeenBG is a lightweight Windows automation tool that sets a random Quran ayah as your desktop wallpaper each time you log into your PC. It renders the Arabic text with full harakah (tashkeel), an English translation, and the surah reference — in a clean, readable layout that adapts to your screen resolution.
+**DeenBG** is a lightweight Windows automation tool that sets a random Quran ayah as your desktop wallpaper each time you log in. It beautifully renders the Arabic text (with proper diacritics), a clear English translation, and the surah reference. All in a clean, readable layout that adapts to your screen resolution.
 
-After a single one-time data download, it runs **completely offline**.
+More than just a wallpaper changer, DeenBG turns your everyday screen time into a moment of reflection. Without interrupting your workflow, it gently reminds you of the Quran throughout the day, helping you stay connected to your deen, improve familiarity with ayahs, and build a consistent habit of remembrance effortlessly.
+
+> After a single one-time data download, it runs **completely offline**.
 
 ---
 
@@ -59,15 +61,12 @@ After a single one-time data download, it runs **completely offline**.
 - Windows 10 or 11
 - Python 3.10+ — [download here](https://www.python.org/downloads/)
   - ✅ Check **"Add Python to PATH"** during installation
-- Amiri font (`Amiri-Regular.ttf`) in the `fonts/` folder — [download from amirifont.org](https://www.amirifont.org)
-- Lato font (`Lato-Regular.ttf`) in the `fonts/` folder — [download from Google Fonts](https://fonts.google.com/specimen/Lato)
 
 ### Install
 
 ```
 1. Unzip DeenBG to a permanent folder, e.g.:  C:\Users\You\DeenBG\
-2. Place Amiri-Regular.ttf and Lato-Regular.ttf in the fonts\ folder
-3. Double-click  install.bat
+3. Run install.bat
 4. Follow the prompts
 ```
 
@@ -126,6 +125,7 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 }
 ```
 
+<!--
 ### Available Themes
 
 | Key             | Name            | Style                        |
@@ -140,17 +140,18 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 | `ivory`         | Ivory Minimal   | Off-white, dark text         |
 | `deep_teal`     | Deep Teal       | Dark teal, soft cyan         |
 | `rose_noir`     | Rose Noir       | Dark maroon, rose text       |
+-->
 
 ### Translation Options
 
 Set `api.translation_edition` in `config.json`, then re-run `fetch_quran_data.py --force`:
 
-| Value          | Translation                         |
-| -------------- | ----------------------------------- |
-| `en.sahih`     | Saheeh International*(recommended)* |
-| `en.pickthall` | Pickthall                           |
-| `en.yusufali`  | Yusuf Ali                           |
-| `en.asad`      | Muhammad Asad                       |
+| Value          | Translation                        |
+| -------------- | ---------------------------------- |
+| `en.sahih`     | Saheeh International (recommended) |
+| `en.pickthall` | Pickthall                          |
+| `en.yusufali`  | Yusuf Ali                          |
+| `en.asad`      | Muhammad Asad                      |
 
 ---
 
