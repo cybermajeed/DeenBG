@@ -1,3 +1,11 @@
-logs/*
-cache/*
+# Ignore generated cache and log directories
+cache/
+logs/
+
+# Python compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local config
 config.json
