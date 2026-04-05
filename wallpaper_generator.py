@@ -144,6 +144,10 @@ DEFAULT_CONFIG = {
         "font_arabic": "Amiri-Regular.ttf",
         "font_latin": "Lato-Regular.ttf",
         "decorative_line": True,
+        # Scale factors around the base resolution-relative size.
+        # 1.0 = default. 1.2 = 20% larger. 0.85 = 15% smaller.
+        "font_scale_arabic": 1.0,
+        "font_scale_translation": 1.0,
     },
     "behavior": {
         "avoid_repeats": True,
@@ -255,7 +259,7 @@ def get_screen_resolution() -> tuple:
 
 
 # ─────────────────────────────────────────────
-# FONT LOADING  (fonts/ folder only)
+# FONT LOADING
 # ─────────────────────────────────────────────
 def load_font(filename: str, size: int) -> ImageFont.FreeTypeFont:
     path = FONT_DIR / filename
@@ -285,18 +289,53 @@ def reshape(text: str) -> str:
 
 
 # ─────────────────────────────────────────────
-# TEXT LAYOUT
+# TEXT LAYOUT  (harakah-safe)
 # ─────────────────────────────────────────────
-def measure(draw, text, font):
-    bb = draw.textbbox((0, 0), text, font=font)
-    return bb[2] - bb[0], bb[3] - bb[1]
+def stable_line_height(font: ImageFont.FreeTypeFont) -> int:
+    """
+    Return a consistent line height using font metrics rather than
+    textbbox, which varies per-line when harakah (diacritics) are
+    present and causes lines to drift and overlap.
+
+    font.getmetrics() returns (ascent, descent) based on the font's
+    design metrics — these are constant regardless of which glyphs
+    or diacritics appear on a given line.
+    """
+    ascent, descent = font.getmetrics()
+    return ascent + descent
 
 
-def wrap_latin(text, font, draw, max_w):
+def stable_top_offset(font: ImageFont.FreeTypeFont) -> int:
+    """
+    PIL places text so that y=0 aligns with the top of the tallest
+    possible glyph, but textbbox[1] can be negative when diacritics
+    extend above the cap-height baseline.  We measure this offset
+    once using a neutral string and subtract it on every draw call
+    so that y always means 'top of the line box', not 'top of ink'.
+    """
+    img = Image.new("RGB", (10, 10))
+    draw = ImageDraw.Draw(img)
+    # Use a Latin string without diacritics to get the stable cap-height offset.
+    bb = draw.textbbox((0, 0), "A", font=font)
+    return bb[1]  # typically 0 or a small positive number
+
+
+def text_width(font: ImageFont.FreeTypeFont, text: str) -> float:
+    """
+    Use textlength() for width measurement.  Unlike textbbox, it does
+    not include side-bearing ink overflows from harakah, giving a
+    more stable centering x for every line.
+    """
+    img = Image.new("RGB", (10, 10))
+    draw = ImageDraw.Draw(img)
+    return draw.textlength(text, font=font)
+
+
+def wrap_latin(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
     words, lines, line = text.split(), [], ""
     for word in words:
         test = (line + " " + word).strip()
-        if measure(draw, test, font)[0] <= max_w:
+        if text_width(font, test) <= max_w:
             line = test
         else:
             if line:
@@ -307,11 +346,11 @@ def wrap_latin(text, font, draw, max_w):
     return lines
 
 
-def wrap_arabic(text, font, draw, max_w):
+def wrap_arabic(text: str, font: ImageFont.FreeTypeFont, max_w: int) -> list:
     words, raw, cur = text.split(), [], []
     for word in words:
         test = reshape(" ".join(cur + [word]))
-        if measure(draw, test, font)[0] <= max_w:
+        if text_width(font, test) <= max_w:
             cur.append(word)
         else:
             if cur:
@@ -322,20 +361,47 @@ def wrap_arabic(text, font, draw, max_w):
     return [reshape(ln) for ln in raw]
 
 
-def block_h(lines, font, draw, gap_ratio=0.35):
+def block_height(lines: list, font: ImageFont.FreeTypeFont, line_gap: int) -> int:
+    """
+    Total pixel height of a text block using stable metrics.
+    line_gap is the absolute pixel gap BETWEEN lines (not a ratio).
+    """
     if not lines:
         return 0
-    _, lh = measure(draw, "Agالله", font)
-    return len(lines) * lh + max(0, len(lines) - 1) * int(lh * gap_ratio)
+    lh = stable_line_height(font)
+    return len(lines) * lh + max(0, len(lines) - 1) * line_gap
 
 
-def draw_block(draw, lines, font, color, W, y, gap_ratio=0.35):
-    _, lh = measure(draw, "Agالله", font)
-    gap = int(lh * gap_ratio)
+def draw_text_block(
+    draw: ImageDraw.ImageDraw,
+    lines: list,
+    font: ImageFont.FreeTypeFont,
+    color: str,
+    W: int,
+    y: int,
+    line_gap: int,
+) -> int:
+    """
+    Draw a block of pre-wrapped lines with consistent spacing.
+    Returns the y position immediately after the last line.
+
+    Key fixes applied here:
+    - Line height from getmetrics() — constant regardless of harakah.
+    - x centering via textlength() — not affected by diacritic ink overflow.
+    - y adjusted by stable_top_offset() — removes PIL's internal upward
+      shift that causes harakah to appear 1-2px above their correct position.
+    """
+    lh = stable_line_height(font)
+    top_offset = stable_top_offset(font)
+
     for line in lines:
-        lw, _ = measure(draw, line, font)
-        draw.text(((W - lw) // 2, y), line, font=font, fill=color)
-        y += lh + gap
+        lw = text_width(font, line)
+        x = int((W - lw) / 2)
+        # Subtract top_offset so the visual top of the glyph sits at y,
+        # not the font's internal "top of possible tallest glyph" baseline.
+        draw.text((x, y - top_offset), line, font=font, fill=color)
+        y += lh + line_gap
+
     return y
 
 
@@ -352,15 +418,21 @@ def generate_wallpaper(ayah: dict, cfg: dict, W: int, H: int) -> Path:
     rfc = dc.get("text_color_reference") or theme["text_color_reference"]
     dec = dc.get("decorative_color") or theme["decorative_color"]
 
-    # Resolution-relative font sizes — never zoomed
-    sz_ar = max(28, int(H * 0.052))
-    sz_tr = max(16, int(H * 0.027))
-    sz_ref = max(13, int(H * 0.022))
+    # ── Font sizes — resolution-relative, user-scalable ───────
+    scale_ar = float(dc.get("font_scale_arabic", 1.0))
+    scale_tr = float(dc.get("font_scale_translation", 1.0))
+
+    sz_ar = max(24, int(H * 0.052 * scale_ar))
+    sz_tr = max(14, int(H * 0.027 * scale_tr))
+    sz_ref = max(12, int(H * 0.022 * scale_tr))  # ref tracks translation scale
 
     font_ar = load_font(dc["font_arabic"], sz_ar)
     font_tr = load_font(dc["font_latin"], sz_tr)
     font_ref = load_font(dc["font_latin"], sz_ref)
 
+    log.info(f"Font sizes — Arabic: {sz_ar}px  Translation: {sz_tr}px  Ref: {sz_ref}px")
+
+    # ── Canvas ────────────────────────────────────────────────
     img = Image.new("RGB", (W, H), bg)
     draw = ImageDraw.Draw(img)
 
@@ -368,42 +440,69 @@ def generate_wallpaper(ayah: dict, cfg: dict, W: int, H: int) -> Path:
     pad_y = int(H * 0.10)
     max_tw = W - 2 * pad_x
 
-    ar_lines = wrap_arabic(ayah["arabic"], font_ar, draw, max_tw)
-    tr_lines = wrap_latin(ayah["translation"], font_tr, draw, max_tw)
+    # ── Wrap text ─────────────────────────────────────────────
+    ar_lines = wrap_arabic(ayah["arabic"], font_ar, max_tw)
+    tr_lines = wrap_latin(ayah["translation"], font_tr, max_tw)
     ref_txt = f"— {ayah['surah_name']},  Ayah {ayah['ayah_in_surah']}"
 
-    gap = int(H * 0.038)
-    deco_h = int(H * 0.04) if dc.get("decorative_line", True) else 0
+    # ── Absolute pixel gaps (stable, not ratio-based) ─────────
+    # Line gap = space BETWEEN lines within a block
+    # Arabic gets tighter gap because Amiri is already well-spaced;
+    # Latin gets a little more breathing room.
+    lh_ar = stable_line_height(font_ar)
+    lh_tr = stable_line_height(font_tr)
+    lh_ref = stable_line_height(font_ref)
 
-    h_ar = block_h(ar_lines, font_ar, draw, 0.30)
-    h_tr = block_h(tr_lines, font_tr, draw, 0.40)
-    h_ref = measure(draw, ref_txt, font_ref)[1]
+    gap_ar = int(lh_ar * 0.20)  # 20% of line height between Arabic lines
+    gap_tr = int(lh_tr * 0.35)  # 35% between translation lines
+    section = int(
+        H * 0.040
+    )  # space between sections (Arabic / separator / translation / ref)
+    deco_h = int(H * 0.040)  # height of the separator zone
 
-    total = h_ar + gap + deco_h + gap + h_tr + gap + h_ref
+    # ── Total content height → vertical center ────────────────
+    h_ar = block_height(ar_lines, font_ar, gap_ar)
+    h_tr = block_height(tr_lines, font_tr, gap_tr)
+    h_ref = lh_ref
+
+    use_deco = dc.get("decorative_line", True)
+    total = (
+        h_ar + section + (deco_h + section if use_deco else 0) + h_tr + section + h_ref
+    )
     y = max(pad_y, (H - total) // 2)
 
-    y = draw_block(draw, ar_lines, font_ar, arc, W, y, 0.30)
+    # ── Draw Arabic ───────────────────────────────────────────
+    y = draw_text_block(draw, ar_lines, font_ar, arc, W, y, gap_ar)
+    y += section
 
-    y += gap
-    if dc.get("decorative_line", True):
+    # ── Decorative separator ──────────────────────────────────
+    if use_deco:
         cy = y + deco_h // 2
         lw = int(W * 0.20)
         cx = W // 2
         draw.line([(cx - lw, cy), (cx + lw, cy)], fill=dec, width=1)
         ds = 4
         draw.polygon(
-            [(cx, cy - ds), (cx + ds, cy), (cx, cy + ds), (cx - ds, cy)], fill=dec
+            [(cx, cy - ds), (cx + ds, cy), (cx, cy + ds), (cx - ds, cy)],
+            fill=dec,
         )
-        y += deco_h
+        y += deco_h + section
 
-    y += gap
-    y = draw_block(draw, tr_lines, font_tr, trc, W, y, 0.40)
+    # ── Draw Translation ──────────────────────────────────────
+    y = draw_text_block(draw, tr_lines, font_tr, trc, W, y, gap_tr)
+    y += section
 
-    y += gap
-    rw = measure(draw, ref_txt, font_ref)[0]
-    draw.text(((W - rw) // 2, y), ref_txt, font=font_ref, fill=rfc)
+    # ── Draw Reference ────────────────────────────────────────
+    top_offset_ref = stable_top_offset(font_ref)
+    rw = text_width(font_ref, ref_txt)
+    draw.text(
+        (int((W - rw) / 2), y - top_offset_ref),
+        ref_txt,
+        font=font_ref,
+        fill=rfc,
+    )
 
-    # Corner ornaments
+    # ── Corner ornaments ──────────────────────────────────────
     ln = min(pad_x, pad_y) // 3
     tk = 2
     for pts in [
@@ -418,6 +517,7 @@ def generate_wallpaper(ayah: dict, cfg: dict, W: int, H: int) -> Path:
     ]:
         draw.line(pts, fill=dec, width=tk)
 
+    # ── Save ─────────────────────────────────────────────────
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out = WALLPAPER_DIR / f"ayah_{ayah['number']}_{ts}.png"
     img.save(str(out), "PNG", optimize=True)

@@ -123,8 +123,8 @@ def install(interval_minutes: int | None):
         if result.returncode == 0:
             print(f"\n  ✓ Task '{TASK_NAME}' registered in Task Scheduler.")
         else:
-            print(f"\n  ✗ Registration failed:\n{result.stderr}")
-            print("  Try running as Administrator if this persists.")
+            print(f"\n      ✗ Registration failed:\n      {result.stderr}", end=" ")
+            input("     TRY RUNNING AS ADMINISTRATOR IF THIS PERSISTS ")
     finally:
         try:
             xml_path.unlink()

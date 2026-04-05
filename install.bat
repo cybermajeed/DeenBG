@@ -1,6 +1,14 @@
 @echo off
 setlocal EnableDelayedExpansion
-title DeenBG — Installer
+title DeenBG Installer
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    color 04
+    echo Please run as Administrator.
+    echo.
+    pause
+    exit
+)
 
 echo.
 echo  ============================================================
@@ -9,6 +17,7 @@ echo  ============================================================
 echo    BISMILLAH
 echo  ============================================================
 echo.
+
 
 :: ── Python check ─────────────────────────────────────────────
 where python >nul 2>&1
