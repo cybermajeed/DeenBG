@@ -79,7 +79,7 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 The installer will:
 
 1. Install Python dependencies
-2. Download the Quran database (one-time, ~3 MB)
+2. Download the Quran database if not available (one-time, ~3 MB)
 3. Walk you through theme and translation selection
 4. Register with Windows Task Scheduler
 5. Generate your first wallpaper immediately
