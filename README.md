@@ -23,25 +23,25 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 
 ## Preview
 
-|                                              |                                         |
-| -------------------------------------------- | --------------------------------------- |
+|                                            |                                       |
+| ------------------------------------------ | ------------------------------------- |
 | ![Midnight Blue](docs/previews/preview1.png) | ![Obsidian](docs/previews/preview2.png) |
 
 ---
 
 ## Available Themes
 
-|                                                   |                                           |
-| ------------------------------------------------- | ----------------------------------------- |
-| **Midnight Blue**                                 | **Obsidian**                              |
+|                                                 |                                         |
+| ----------------------------------------------- | --------------------------------------- |
+| **Midnight Blue**                         | **Obsidian**                      |
 | ![Midnight Blue](docs/previews/midnight_blue.png) | ![Obsidian](docs/previews/obsidian.png)   |
-| **Charcoal & Gold**                               | **Parchment**                             |
+| **Charcoal & Gold**                       | **Parchment**                     |
 | ![Charcoal Gold](docs/previews/charcoal_gold.png) | ![Parchment](docs/previews/parchment.png) |
-| **Slate**                                         | **Forest**                                |
+| **Slate**                                 | **Forest**                        |
 | ![Slate](docs/previews/slate.png)                 | ![Forest](docs/previews/forest.png)       |
-| **Desert Sand**                                   | **Ivory Minimal**                         |
+| **Desert Sand**                           | **Ivory Minimal**                 |
 | ![Desert](docs/previews/desert.png)               | ![Ivory](docs/previews/ivory.png)         |
-| **Deep Teal**                                     | **Rose Noir**                             |
+| **Deep Teal**                             | **Rose Noir**                     |
 | ![Deep Teal](docs/previews/deep_teal.png)         | ![Rose Noir](docs/previews/rose_noir.png) |
 
 ---
@@ -62,11 +62,10 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 
 ### Requirements
 
-- Windows 10 or 11
+- Windows 10 or 11 with Admin privileges
 - Python 3.10+ — [download here](https://www.python.org/downloads/)
+
   - ✅ Check **"Add Python to PATH"** during installation
-- **Amiri** font (Arabic) — [download from amirifont.org](https://www.amirifont.org) → place `Amiri-Regular.ttf` in the `fonts/` folder
-- **Lato** font (Latin) — [download from Google Fonts](https://fonts.google.com/specimen/Lato) → place `Lato-Regular.ttf` in the `fonts/` folder
 
 ### Install
 
@@ -132,8 +131,8 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
 
 Set `api.translation_edition` in `config.json`, then re-run `fetch_quran_data.py --force`:
 
-| Value          | Translation                        |
-| -------------- | ---------------------------------- |
+| Value            | Translation                        |
+| ---------------- | ---------------------------------- |
 | `en.sahih`     | Saheeh International (recommended) |
 | `en.pickthall` | Pickthall                          |
 | `en.yusufali`  | Yusuf Ali                          |
