@@ -64,7 +64,7 @@ def _ask_float(prompt: str, default: float, lo: float, hi: float) -> float:
 
 def run():
     print("\n" + "═" * 58)
-    print("  🌙  DeenBG — Setup Wizard")
+    print("                  DeenBG — Setup Wizard")
     print("═" * 58)
     print("  Press Enter to accept [default] values.\n")
 
