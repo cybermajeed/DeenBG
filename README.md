@@ -21,6 +21,12 @@ A Windows automation tool that sets a random Quranic verse as your wallpaper on 
 
 More than just a wallpaper changer, DeenBG turns your everyday screen time into a moment of reflection. Without interrupting your workflow, it gently reminds you of the Quran throughout the day, helping you stay connected to your deen, improve familiarity with ayahs, and build a consistent habit of remembrance effortlessly.
 
+## Preview
+
+|                                              |                                         |
+| -------------------------------------------- | --------------------------------------- |
+| ![Midnight Blue](docs/previews/preview1.png) | ![Obsidian](docs/previews/preview2.png) |
+
 ---
 
 ## Available Themes
@@ -39,12 +45,6 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 | ![Deep Teal](docs/previews/deep_teal.png)         | ![Rose Noir](docs/previews/rose_noir.png) |
 
 ---
-
-## Preview
-
-|                                              |                                         |
-| -------------------------------------------- | --------------------------------------- |
-| ![Midnight Blue](docs/previews/preview1.png) | ![Obsidian](docs/previews/preview2.png) |
 
 ## Features
 
