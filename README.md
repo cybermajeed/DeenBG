@@ -65,6 +65,8 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 - Windows 10 or 11
 - Python 3.10+ — [download here](https://www.python.org/downloads/)
   - ✅ Check **"Add Python to PATH"** during installation
+- **Amiri** font (Arabic) — [download from amirifont.org](https://www.amirifont.org) → place `Amiri-Regular.ttf` in the `fonts/` folder
+- **Lato** font (Latin) — [download from Google Fonts](https://fonts.google.com/specimen/Lato) → place `Lato-Regular.ttf` in the `fonts/` folder
 
 ### Install
 
@@ -96,7 +98,9 @@ Settings are stored in `config.json`. Edit it anytime — changes take effect on
     "theme": "midnight_blue",
     "font_arabic": "Amiri-Regular.ttf",
     "font_latin": "Lato-Regular.ttf",
-    "decorative_line": true
+    "decorative_line": true,
+    "font_scale_arabic": 1.0,
+    "font_scale_translation": 1.0
   },
   "behavior": {
     "avoid_repeats": true,
