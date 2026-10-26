@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/logo/icon.png" alt="DeenBG Logo" width="380" />
+
 # DeenBG
 
 ### Automated Quran Wallpaper Generator for Windows
@@ -60,31 +62,42 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 
 ## Quick Start
 
-### Requirements
+### Option 1: Standalone Installer (Recommended — No Python Needed)
 
-- Windows 10 or 11 with Admin privileges
+Download and run [**DeenBG-Setup.exe**](dist/DeenBG-Setup.exe) (or download [**DeenBG-Setup.zip**](dist/DeenBG-Setup.zip)):
+- **Zero prerequisites**: No Python or external dependencies required.
+- **Visual Theme Picker**: See full live renders of all 10 themes before choosing.
+- **Interactive Setup Wizard**: Guided steps to choose folder, translation, font sizing, and schedule.
+- **Self-contained**: Embeds all Arabic & Latin fonts and the full 6,236 Ayah Quran database.
+
+1. Download and run [**DeenBG-Setup.exe**](dist/DeenBG-Setup.exe)
+2. Visually pick your favorite theme & preferred translation
+3. Click **Install Now** — your desktop wallpaper is instantly updated!
+
+> **To build the standalone executable yourself:** run `build_installer.bat`. The compiled executable will be placed in [`dist/DeenBG-Setup.exe`](dist/DeenBG-Setup.exe).
+
+---
+
+### Option 2: Running from Source (Developers)
+
+#### Requirements
+
+- Windows 10 or 11
 - Python 3.10+ — [download here](https://www.python.org/downloads/)
   - ✅ Check **"Add Python to PATH"** during installation
 
-### Install
+#### Usage
 
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Generate and set wallpaper directly
+python wallpaper_generator.py
+
+# 3. Or compile the standalone GUI installer
+build_installer.bat
 ```
-
-1. Unzip DeenBG to a permanent folder, e.g.: C:\Users\You\DeenBG\
-2. Run install.bat as Administrator
-3. Follow the prompts
-
-```
-
-The installer will:
-
-1. Install Python dependencies
-2. Download the Quran database if not available (one-time, ~3 MB)
-3. Walk you through theme and translation selection
-4. Register with Windows Task Scheduler
-5. Generate your first wallpaper immediately
-
----
 
 ## Configuration
 

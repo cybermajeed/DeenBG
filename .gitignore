@@ -1,12 +1,39 @@
-# Ignore generated cache and log directories
-cache/
-logs/
-wallpapers/
+# Generated runtime data (preserve folder structure via .gitkeep)
+cache/*
+!cache/.gitkeep
+logs/*
+!logs/.gitkeep
+wallpapers/*
+!wallpapers/.gitkeep
 
-# Python compiled files
+# Python compiled files & bytecode
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyd
 
-# Local config
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE & Editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.tmp
+
+# Local runtime configuration
 config.json
+
+# PyInstaller intermediate build directories
+build/
+*.spec
