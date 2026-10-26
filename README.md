@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/logo/icon.png" alt="DeenBG Logo" width="380" />
+<img src="docs/logo/icon.png" alt="DeenBG Logo" width="160" />
 
 # DeenBG
 
@@ -64,17 +64,18 @@ More than just a wallpaper changer, DeenBG turns your everyday screen time into 
 
 ### Option 1: Standalone Installer (Recommended — No Python Needed)
 
-Download and run [**DeenBG-Setup.exe**](dist/DeenBG-Setup.exe) (or download [**DeenBG-Setup.zip**](dist/DeenBG-Setup.zip)):
+Download and run [**DeenBG Installer.exe**](dist/DeenBG%20Installer.exe):
+
 - **Zero prerequisites**: No Python or external dependencies required.
 - **Visual Theme Picker**: See full live renders of all 10 themes before choosing.
 - **Interactive Setup Wizard**: Guided steps to choose folder, translation, font sizing, and schedule.
 - **Self-contained**: Embeds all Arabic & Latin fonts and the full 6,236 Ayah Quran database.
 
-1. Download and run [**DeenBG-Setup.exe**](dist/DeenBG-Setup.exe)
+1. Download and run [**DeenBG Installer.exe**](dist/DeenBG%20Installer.exe)
 2. Visually pick your favorite theme & preferred translation
 3. Click **Install Now** — your desktop wallpaper is instantly updated!
 
-> **To build the standalone executable yourself:** run `build_installer.bat`. The compiled executable will be placed in [`dist/DeenBG-Setup.exe`](dist/DeenBG-Setup.exe).
+> **To build the standalone executable yourself:** run `build_installer.bat`. The compiled executable will be placed in [`dist/DeenBG Installer.exe`](dist/DeenBG%20Installer.exe).
 
 ---
 
@@ -156,25 +157,30 @@ Set `api.translation_edition` in `config.json`, then re-run `fetch_quran_data.py
 
 ```
 DeenBG/
-├── wallpaper_generator.py   ← Main script (runs at login)
-├── fetch_quran_data.py      ← One-time data downloader
-├── setup_wizard.py          ← Interactive configuration
-├── install_task.py          ← Task Scheduler registration
-├── install.bat              ← One-click installer
-├── requirements.txt
-├── config.json              ← Your settings (auto-created)
-├── fonts/
-│   ├── Amiri-Regular.ttf    ← Place here manually
-│   └── Lato-Regular.ttf     ← Place here manually
+├── dist/
+│   └── DeenBG Installer.exe ← Standalone installer (zero Python needed)
+├── installer_gui.py         ← Interactive GUI setup wizard & embedded engine
+├── build_installer.bat      ← Compiles standalone executable using PyInstaller
+├── wallpaper_generator.py   ← Standalone Python script (runs from source)
+├── fetch_quran_data.py      ← Utility to fetch Quran & translation data
+├── requirements.txt         ← Python dependencies (for running from source)
+├── config.json              ← User settings (auto-created upon install)
+├── fonts/                   ← Bundled typography
+│   ├── Amiri-Regular.ttf    ← Arabic font with full harakah support
+│   └── Lato-Regular.ttf     ← Latin font for translations & references
 ├── data/
-│   └── quran.json           ← Offline Quran DB (auto-created)
-├── wallpapers/              ← Generated PNGs (auto-pruned)
+│   └── quran.json           ← Complete offline Quran DB (6,236 ayahs)
+├── wallpapers/              ← Generated PNG wallpapers (auto-pruned)
 ├── cache/
-│   └── seen_ayahs.json      ← Repeat-avoidance cache
+│   └── seen_ayahs.json      ← Repeat-avoidance cycle cache
 ├── logs/
-│   └── deenbg.log
+│   └── deenbg.log           ← Background execution log
 └── docs/
-    └── previews/            ← Theme preview images
+    ├── logo/                ← Application branding & icons
+    │   ├── icon.ico         ← Multi-resolution Windows app icon
+    │   ├── icon.png         ← High-resolution logo
+    │   └── icon_transparent.png
+    └── previews/            ← 10 built-in theme preview renders
 ```
 
 ---

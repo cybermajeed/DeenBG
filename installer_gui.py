@@ -293,7 +293,7 @@ def run_generate_mode():
 # INSTALLER GUI
 # ============================================================
 class InstallerApp:
-    WIN_W,WIN_H=880,660
+    WIN_W,WIN_H=880,680
     STEPS=["Welcome","Install Folder","Choose Theme","Translation","Settings","Installing"]
 
     def __init__(self,root):
@@ -384,17 +384,18 @@ class InstallerApp:
                  bg=UI["bg"],fg=UI["accent"],font=("Segoe UI",15)).pack(pady=(0,8))
 
         logo_loaded = False
-        for lp in [res("docs/logo/icon_transparent.png"), res("docs/logo/icon.png")]:
+        for lp in [res("docs/logo/icon.ico"), res("icon.ico"), res("docs/logo/icon_transparent.png"), res("docs/logo/icon.png")]:
             if lp.exists():
                 try:
                     lim = Image.open(lp).convert("RGBA")
                     bbox = lim.getbbox()
                     if bbox: lim = lim.crop(bbox)
-                    tw = 320
+                    aspect = lim.width / max(1, lim.height)
+                    tw = 140 if 0.8 <= aspect <= 1.2 else 320
                     th = int(tw * lim.height / lim.width)
                     lim = lim.resize((tw, th), Image.Resampling.LANCZOS)
                     self._welcome_logo = ImageTk.PhotoImage(lim)
-                    tk.Label(f, image=self._welcome_logo, bg=UI["bg"]).pack(pady=(0, 4))
+                    tk.Label(f, image=self._welcome_logo, bg=UI["bg"]).pack(pady=(0, 6))
                     logo_loaded = True
                     break
                 except Exception: pass
@@ -478,17 +479,17 @@ class InstallerApp:
         self._btn(self.footer,"Next  \u2192",lambda:self._show_page(3),primary=True).pack(side="right",padx=22,pady=12)
 
     def _p_translation(self):
-        f=tk.Frame(self.content,bg=UI["bg"]); f.pack(fill="both",expand=True,padx=54,pady=34)
+        f=tk.Frame(self.content,bg=UI["bg"]); f.pack(fill="both",expand=True,padx=54,pady=(20,10))
         tk.Label(f,text="Choose a Translation",bg=UI["bg"],fg=UI["text"],
                  font=("Segoe UI",20,"bold")).pack(anchor="w")
         tk.Label(f,text="Select the English translation that will appear beneath the Arabic text.",
-                 bg=UI["bg"],fg=UI["muted"],font=("Segoe UI",10)).pack(anchor="w",pady=(4,20))
+                 bg=UI["bg"],fg=UI["muted"],font=("Segoe UI",10)).pack(anchor="w",pady=(2,12))
         cards=[]
         for key,(name,desc) in TRANSLATIONS.items():
             issel=key==self.selected_trans.get()
-            card=tk.Frame(f,bg=UI["card"],padx=16,pady=12,
+            card=tk.Frame(f,bg=UI["card"],padx=16,pady=8,
                           highlightbackground=UI["accent"] if issel else UI["border"],highlightthickness=1)
-            card.pack(fill="x",pady=5); cards.append(card)
+            card.pack(fill="x",pady=4); cards.append(card)
             rb=tk.Radiobutton(card,variable=self.selected_trans,value=key,bg=UI["card"],fg=UI["text"],
                               selectcolor=UI["card"],activebackground=UI["card"],
                               activeforeground=UI["text"],cursor="hand2"); rb.pack(side="left")
@@ -504,7 +505,7 @@ class InstallerApp:
         self._btn(self.footer,"Next  \u2192",lambda:self._show_page(4),primary=True).pack(side="right",padx=22,pady=12)
 
     def _p_settings(self):
-        f=tk.Frame(self.content,bg=UI["bg"]); f.pack(fill="both",expand=True,padx=54,pady=26)
+        f=tk.Frame(self.content,bg=UI["bg"]); f.pack(fill="both",expand=True,padx=54,pady=(18,10))
         tk.Label(f,text="Configure Settings",bg=UI["bg"],fg=UI["text"],
                  font=("Segoe UI",20,"bold")).pack(anchor="w")
         tk.Label(f,text="All settings can be changed later by editing config.json.",

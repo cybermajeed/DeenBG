@@ -39,9 +39,9 @@ if exist "!SP!\tcl" (
     echo  [OK] Tcl/Tk environment configured.
 )
 
-echo  Compiling DeenBG-Setup.exe (this takes 1-3 minutes)...
+echo  Compiling "DeenBG Installer.exe" (this takes 1-3 minutes)...
 echo.
-pyinstaller --onefile --windowed --name DeenBG-Setup --icon "docs\logo\icon.ico" --add-data "fonts;fonts" --add-data "data;data" --add-data "docs\logo;docs\logo" --hidden-import PIL._tkinter_finder --hidden-import arabic_reshaper --hidden-import bidi.algorithm --collect-all arabic_reshaper --collect-all bidi --noconfirm installer_gui.py
+pyinstaller --onefile --windowed --name "DeenBG Installer" --icon "docs\logo\icon.ico" --add-data "fonts;fonts" --add-data "data;data" --add-data "docs\logo;docs\logo" --hidden-import PIL._tkinter_finder --hidden-import arabic_reshaper --hidden-import bidi.algorithm --collect-all arabic_reshaper --collect-all bidi --noconfirm installer_gui.py
 if errorlevel 1 (
     echo.
     echo  [ERROR] Build failed. See PyInstaller output above.
@@ -49,9 +49,9 @@ if errorlevel 1 (
 )
 echo.
 echo  ========================================================
-echo    Build Complete!  dist\DeenBG-Setup.exe
+echo    Build Complete!  "dist\DeenBG Installer.exe"
 echo    Distribute this single file. No Python needed!
 echo  ========================================================
 echo.
-if exist "dist\DeenBG-Setup.exe" ( explorer dist )
+if exist "dist\DeenBG Installer.exe" ( explorer dist )
 pause
