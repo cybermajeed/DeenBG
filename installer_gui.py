@@ -289,6 +289,66 @@ def run_generate_mode():
         except Exception as e: log.warning("Cache err: %s",e)
     log.info("Done OK")
 
+def run_uninstall_mode():
+    try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try: ctypes.windll.user32.SetProcessDPIAware()
+        except Exception: pass
+
+    import tkinter as tk
+    from tkinter import messagebox
+    root = tk.Tk()
+    root.withdraw()
+
+    confirm = messagebox.askyesno(
+        "Uninstall DeenBG",
+        "Are you sure you want to completely uninstall DeenBG and remove all its components?",
+        icon="warning"
+    )
+    if not confirm:
+        sys.exit(0)
+
+    idir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+
+    # 1. Delete Task Scheduler task if present
+    try:
+        subprocess.run(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], capture_output=True)
+    except Exception:
+        pass
+
+    # 2. Delete Windows Startup registry key if present
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
+            winreg.DeleteValue(k, TASK_NAME)
+    except Exception:
+        pass
+
+    # 3. Delete Windows Startup folder script if present
+    try:
+        st = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "DeenBG.cmd"
+        if st.exists():
+            st.unlink()
+    except Exception:
+        pass
+
+    # 4. Delete Control Panel Uninstall registry key
+    try:
+        import winreg
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG")
+    except Exception:
+        pass
+
+    # 5. Delete installation directory in background after process termination
+    try:
+        cmd = f'ping 127.0.0.1 -n 3 > nul & rmdir /s /q "{idir}"'
+        subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000 | 0x00000008)
+    except Exception:
+        pass
+
+    messagebox.showinfo("DeenBG", "DeenBG has been successfully uninstalled from your computer.")
+    sys.exit(0)
+
 # ============================================================
 # INSTALLER GUI
 # ============================================================
@@ -384,23 +444,37 @@ class InstallerApp:
                  bg=UI["bg"],fg=UI["accent"],font=("Segoe UI",15)).pack(pady=(0,8))
 
         logo_loaded = False
-        for lp in [res("docs/logo/icon.ico"), res("icon.ico"), res("docs/logo/icon_transparent.png"), res("docs/logo/icon.png")]:
+        candidates = [
+            res("docs/logo/icon_transparent.png"),
+            res("docs/logo/icon.png"),
+            Path("docs/logo/icon_transparent.png"),
+            Path("docs/logo/icon.png"),
+        ]
+        for lp in candidates:
             if lp.exists():
                 try:
                     lim = Image.open(lp).convert("RGBA")
+                    # If image does not have transparent pixels, make white background transparent
+                    extrema = lim.getchannel("A").getextrema()
+                    if extrema[0] >= 250:
+                        gray = lim.convert("L")
+                        diff = Image.eval(gray, lambda v: 255 - v)
+                        alpha = Image.eval(diff, lambda v: min(255, int(v * 6.5)))
+                        lim.putalpha(alpha)
                     bbox = lim.getbbox()
-                    if bbox: lim = lim.crop(bbox)
-                    aspect = lim.width / max(1, lim.height)
-                    tw = 140 if 0.8 <= aspect <= 1.2 else 320
+                    if bbox:
+                        lim = lim.crop(bbox)
+                    tw = 320
                     th = int(tw * lim.height / lim.width)
                     lim = lim.resize((tw, th), Image.Resampling.LANCZOS)
                     self._welcome_logo = ImageTk.PhotoImage(lim)
                     tk.Label(f, image=self._welcome_logo, bg=UI["bg"]).pack(pady=(0, 6))
                     logo_loaded = True
                     break
-                except Exception: pass
+                except Exception:
+                    pass
         if not logo_loaded:
-            tk.Label(f,text="DeenBG",bg=UI["bg"],fg=UI["text"],font=("Segoe UI",36,"bold")).pack(pady=(0, 4))
+            tk.Label(f, text="DeenBG", bg=UI["bg"], fg=UI["text"], font=("Segoe UI", 36, "bold")).pack(pady=(0, 4))
 
         tk.Label(f,text=f"Quran Wallpaper Generator  \u00b7  v{APP_VER}",
                  bg=UI["bg"],fg=UI["muted"],font=("Segoe UI",11)).pack(pady=(2,6))
@@ -430,9 +504,9 @@ class InstallerApp:
                    font=("Segoe UI",9,"bold"),padx=14,pady=4,cursor="hand2")
         b.pack(side="right",padx=(10,0)); b.bind("<Button-1>",lambda e:browse())
         tk.Frame(f,bg=UI["border"],height=1).pack(fill="x",pady=18)
-        tk.Label(f,text=("  \u2022 Approximately 10 MB of disk space is required.\n"
+        tk.Label(f,text=("  \u2022 Approximately 40 MB of disk space is required.\n"
                          "  \u2022 No administrator privileges needed.\n"
-                         "  \u2022 To uninstall: delete the folder and remove the 'DeenBG' Task Scheduler entry."),
+                         "  \u2022 To uninstall: remove via Windows Settings \u2192 Installed apps or Control Panel."),
                  bg=UI["bg"],fg=UI["muted"],font=("Segoe UI",9),justify="left").pack(anchor="w")
         self._btn(self.footer,"\u2190  Back",lambda:self._show_page(0)).pack(side="left",padx=22,pady=12)
         self._btn(self.footer,"Next  \u2192",lambda:self._show_page(2),primary=True).pack(side="right",padx=22,pady=12)
@@ -642,6 +716,7 @@ class InstallerApp:
             self._status("Registering Task Scheduler\u2026",74)
             iv=int(self.interval_var.get()) if self.interval_var.get().strip().isdigit() else None
             ok,msg=self._reg(dst,iv); self._log(f"  [{'OK' if ok else 'ERR'}] Task: {msg}",None if ok else UI["error"])
+        self._reg_uninstall(dst, d)
         self._status("Generating first wallpaper\u2026",88); self._log("\n  Generating first wallpaper\u2026")
         try:
             r=subprocess.run([str(dst),"--generate"],capture_output=True,timeout=40)
@@ -731,6 +806,24 @@ class InstallerApp:
             try: tmp.unlink()
             except Exception: pass
 
+    def _reg_uninstall(self, exe, d):
+        try:
+            import winreg
+            k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG")
+            winreg.SetValueEx(k, "DisplayName", 0, winreg.REG_SZ, "DeenBG")
+            winreg.SetValueEx(k, "DisplayVersion", 0, winreg.REG_SZ, APP_VER)
+            winreg.SetValueEx(k, "Publisher", 0, winreg.REG_SZ, "CyberMajeed")
+            winreg.SetValueEx(k, "DisplayIcon", 0, winreg.REG_SZ, f'"{exe}",0')
+            winreg.SetValueEx(k, "UninstallString", 0, winreg.REG_SZ, f'"{exe}" --uninstall')
+            winreg.SetValueEx(k, "InstallLocation", 0, winreg.REG_SZ, str(d))
+            winreg.SetValueEx(k, "NoModify", 0, winreg.REG_DWORD, 1)
+            winreg.SetValueEx(k, "NoRepair", 0, winreg.REG_DWORD, 1)
+            winreg.SetValueEx(k, "EstimatedSize", 0, winreg.REG_DWORD, 42000)
+            winreg.CloseKey(k)
+            self._log("  [OK] Registered in Control Panel (Installed Apps)")
+        except Exception as e:
+            self._log(f"  [WARN] Control Panel register: {e}", UI["muted"])
+
     def _on_finish(self):
         if self._ok: self.root.destroy()
 
@@ -740,6 +833,8 @@ class InstallerApp:
 def main():
     if "--generate" in sys.argv:
         run_generate_mode()
+    elif "--uninstall" in sys.argv:
+        run_uninstall_mode()
     else:
         try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
         except Exception:
