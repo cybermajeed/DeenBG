@@ -312,37 +312,35 @@ def run_uninstall_mode():
         confirmed = True
     else:
         try:
-            import tkinter as tk
-            from tkinter import messagebox
-            root = tk.Tk()
-            root.withdraw()
-            confirmed = messagebox.askyesno(
-                "Uninstall DeenBG",
+            MB_YESNO = 0x00000004
+            MB_ICONWARNING = 0x00000030
+            MB_TOPMOST = 0x00040000
+            MB_SETFOREGROUND = 0x00010000
+            IDYES = 6
+            res = ctypes.windll.user32.MessageBoxW(
+                0,
                 "Are you sure you want to completely uninstall DeenBG and remove all its components?",
-                icon="warning"
+                "Uninstall DeenBG",
+                MB_YESNO | MB_ICONWARNING | MB_TOPMOST | MB_SETFOREGROUND
             )
-            root.destroy()
+            confirmed = (res == IDYES)
         except Exception:
-            try:
-                if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
-                    ans = input("Are you sure you want to completely uninstall DeenBG? (y/n) [n]: ").strip().lower()
-                    confirmed = (ans == "y")
-                else:
-                    confirmed = True
-            except Exception:
-                confirmed = True
+            confirmed = True
 
     if not confirmed:
         sys.exit(0)
 
-    # 1. Terminate running background deenbg processes
+    cur_pid = os.getpid()
+    cur_exe = Path(sys.executable).resolve()
+
+    # 1. Terminate OTHER background deenbg processes (exclude current PID!)
     try:
-        subprocess.run(["taskkill", "/F", "/IM", EXE_NAME], capture_output=True)
-        time.sleep(0.3)
+        subprocess.run(["taskkill", "/F", "/FI", f"PID ne {cur_pid}", "/IM", EXE_NAME], capture_output=True)
+        time.sleep(0.2)
     except Exception:
         pass
 
-    # 2. Delete Task Scheduler tasks
+    # 2. Delete Task Scheduler tasks immediately
     for tn in [TASK_NAME, "DeenBG Wallpaper"]:
         try:
             subprocess.run(["schtasks", "/Delete", "/TN", tn, "/F"], capture_output=True)
@@ -386,7 +384,6 @@ def run_uninstall_mode():
     except Exception:
         pass
 
-    cur_exe = Path(sys.executable).resolve()
     if cur_exe.parent.name.lower() == "deenbg":
         target_dirs.add(cur_exe.parent)
 
@@ -397,13 +394,10 @@ def run_uninstall_mode():
     except Exception:
         pass
 
-    # 7. Delete installed files and directories
-    for d in target_dirs:
-        if not d.exists() or not d.is_dir():
+    # 7. Synchronously wipe all non-locked files and subdirectories
+    for d in list(target_dirs):
+        if not d.exists() or not d.is_dir() or d.name.lower() != "deenbg":
             continue
-        if d.name.lower() != "deenbg":
-            continue
-        # Synchronously remove non-locked files and subdirectories
         for item in list(d.iterdir()):
             try:
                 if item.resolve() == cur_exe:
@@ -422,37 +416,40 @@ def run_uninstall_mode():
         # Schedule delayed self-deletion for folder and running executable
         try:
             cmd = (
-                f'timeout /t 2 /nobreak >nul & '
+                f'ping 127.0.0.1 -n 3 >nul & '
                 f'taskkill /F /IM "{EXE_NAME}" >nul 2>&1 & '
-                f'rmdir /s /q "{d}"'
+                f'del /f /q "{cur_exe}" >nul 2>&1 & '
+                f'rmdir /s /q "{d}" >nul 2>&1'
             )
-            subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000 | 0x00000008)
+            subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000)
         except Exception:
             pass
         try:
             ps = (
                 f"Start-Sleep -Seconds 2; "
-                f"Stop-Process -Name '{Path(EXE_NAME).stem}' -Force -ErrorAction SilentlyContinue; "
+                f"Remove-Item -LiteralPath '{cur_exe}' -Force -ErrorAction SilentlyContinue; "
                 f"Remove-Item -LiteralPath '{d}' -Recurse -Force -ErrorAction SilentlyContinue"
             )
             subprocess.Popen(["powershell.exe", "-WindowStyle", "Hidden", "-Command", ps],
-                             creationflags=0x08000000 | 0x00000008)
+                             creationflags=0x08000000)
         except Exception:
             pass
 
     # 8. Notify user (unless quiet/silent)
     if not any(arg in sys.argv for arg in ("--quiet", "--silent")):
         try:
-            import tkinter as tk
-            from tkinter import messagebox
-            root = tk.Tk()
-            root.withdraw()
-            messagebox.showinfo("DeenBG", "DeenBG has been successfully uninstalled from your computer.")
-            root.destroy()
+            MB_OK = 0x00000000
+            MB_ICONINFORMATION = 0x00000040
+            MB_TOPMOST = 0x00040000
+            MB_SETFOREGROUND = 0x00010000
+            ctypes.windll.user32.MessageBoxW(
+                0,
+                "DeenBG has been successfully uninstalled from your computer.",
+                "DeenBG",
+                MB_OK | MB_ICONINFORMATION | MB_TOPMOST | MB_SETFOREGROUND
+            )
         except Exception:
-            print("DeenBG has been successfully uninstalled from your computer.")
-    else:
-        print("DeenBG has been successfully uninstalled from your computer.")
+            pass
     sys.exit(0)
 
 def _clean_install_dir(d: Path):
