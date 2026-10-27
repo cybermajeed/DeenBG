@@ -13,28 +13,40 @@ Author  : CyberMajeed
 License : MIT
 """
 from __future__ import annotations
-import sys, os, json, shutil, subprocess, threading, ctypes, logging, random, tempfile
+import sys, os, json, shutil, subprocess, threading, ctypes, logging, random, tempfile, time
 from datetime import datetime
 from pathlib import Path
 
 # Configure Windows DLL & Tcl path if needed
 if sys.platform == "win32" and not getattr(sys, "frozen", False):
     for _p in [
-        Path(sys.prefix) / "Lib" / "site-packages",
-        Path.home() / "AppData" / "Roaming" / "Python" / f"Python{sys.version_info.major}{sys.version_info.minor}" / "site-packages"
+        Path(sys.prefix) / "Lib" / "site-packages" / "tcl",
+        Path.home() / "AppData" / "Roaming" / "Python" / f"Python{sys.version_info.major}{sys.version_info.minor}" / "site-packages" / "tcl",
+        Path.home() / "AppData" / "Roaming" / "Python" / "Python314" / "site-packages" / "tcl",
+        Path(sys.prefix) / "tcl",
     ]:
-        if (_p / "tcl").exists():
+        if _p.exists() and (_p / "tcl8.6" / "init.tcl").exists():
             try:
-                os.add_dll_directory(str(_p))
+                os.add_dll_directory(str(_p.parent))
             except Exception:
                 pass
-            os.environ.setdefault("TCL_LIBRARY", str(_p / "tcl" / "tcl8.6"))
-            os.environ.setdefault("TK_LIBRARY", str(_p / "tcl" / "tk8.6"))
+            os.environ["TCL_LIBRARY"] = str(_p / "tcl8.6")
+            os.environ["TK_LIBRARY"] = str(_p / "tk8.6")
             break
 
-import tkinter as tk
-from tkinter import ttk, filedialog
-from PIL import Image, ImageDraw, ImageFont, ImageTk
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog
+    from PIL import ImageTk
+    HAS_TK = True
+except Exception:
+    tk = None
+    ttk = None
+    filedialog = None
+    ImageTk = None
+    HAS_TK = False
+
+from PIL import Image, ImageDraw, ImageFont
 import arabic_reshaper
 from bidi.algorithm import get_display
 
@@ -295,28 +307,56 @@ def run_uninstall_mode():
         try: ctypes.windll.user32.SetProcessDPIAware()
         except Exception: pass
 
-    import tkinter as tk
-    from tkinter import messagebox
-    root = tk.Tk()
-    root.withdraw()
+    confirmed = False
+    if any(arg in sys.argv for arg in ("--quiet", "--silent", "-y")):
+        confirmed = True
+    else:
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+            root = tk.Tk()
+            root.withdraw()
+            confirmed = messagebox.askyesno(
+                "Uninstall DeenBG",
+                "Are you sure you want to completely uninstall DeenBG and remove all its components?",
+                icon="warning"
+            )
+            root.destroy()
+        except Exception:
+            try:
+                if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+                    ans = input("Are you sure you want to completely uninstall DeenBG? (y/n) [n]: ").strip().lower()
+                    confirmed = (ans == "y")
+                else:
+                    confirmed = True
+            except Exception:
+                confirmed = True
 
-    confirm = messagebox.askyesno(
-        "Uninstall DeenBG",
-        "Are you sure you want to completely uninstall DeenBG and remove all its components?",
-        icon="warning"
-    )
-    if not confirm:
+    if not confirmed:
         sys.exit(0)
 
-    idir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
-
-    # 1. Delete Task Scheduler task if present
+    # 1. Terminate running background deenbg processes
     try:
-        subprocess.run(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], capture_output=True)
+        subprocess.run(["taskkill", "/F", "/IM", EXE_NAME], capture_output=True)
+        time.sleep(0.3)
     except Exception:
         pass
 
-    # 2. Delete Windows Startup registry key if present
+    # 2. Delete Task Scheduler tasks
+    for tn in [TASK_NAME, "DeenBG Wallpaper"]:
+        try:
+            subprocess.run(["schtasks", "/Delete", "/TN", tn, "/F"], capture_output=True)
+        except Exception:
+            pass
+        try:
+            subprocess.run([
+                "powershell.exe", "-WindowStyle", "Hidden", "-Command",
+                f"Unregister-ScheduledTask -TaskName '{tn}' -Confirm:$false -ErrorAction SilentlyContinue"
+            ], capture_output=True)
+        except Exception:
+            pass
+
+    # 3. Delete Windows Startup registry key if present
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
@@ -324,7 +364,7 @@ def run_uninstall_mode():
     except Exception:
         pass
 
-    # 3. Delete Windows Startup folder script if present
+    # 4. Delete Windows Startup folder script if present
     try:
         st = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "DeenBG.cmd"
         if st.exists():
@@ -332,22 +372,112 @@ def run_uninstall_mode():
     except Exception:
         pass
 
-    # 4. Delete Control Panel Uninstall registry key
+    # 5. Determine target install directories to remove
+    target_dirs = set()
+    if DEFAULT_INSTALL.exists():
+        target_dirs.add(DEFAULT_INSTALL.resolve())
+
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG") as k:
+            loc, _ = winreg.QueryValueEx(k, "InstallLocation")
+            if loc and Path(loc).exists():
+                target_dirs.add(Path(loc).resolve())
+    except Exception:
+        pass
+
+    cur_exe = Path(sys.executable).resolve()
+    if cur_exe.parent.name.lower() == "deenbg":
+        target_dirs.add(cur_exe.parent)
+
+    # 6. Delete Control Panel Uninstall registry key
     try:
         import winreg
         winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG")
     except Exception:
         pass
 
-    # 5. Delete installation directory in background after process termination
+    # 7. Delete installed files and directories
+    for d in target_dirs:
+        if not d.exists() or not d.is_dir():
+            continue
+        if d.name.lower() != "deenbg":
+            continue
+        # Synchronously remove non-locked files and subdirectories
+        for item in list(d.iterdir()):
+            try:
+                if item.resolve() == cur_exe:
+                    continue
+                if item.is_dir():
+                    shutil.rmtree(item, ignore_errors=True)
+                else:
+                    try:
+                        os.chmod(item, 0o777)
+                    except Exception:
+                        pass
+                    item.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+        # Schedule delayed self-deletion for folder and running executable
+        try:
+            cmd = (
+                f'timeout /t 2 /nobreak >nul & '
+                f'taskkill /F /IM "{EXE_NAME}" >nul 2>&1 & '
+                f'rmdir /s /q "{d}"'
+            )
+            subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000 | 0x00000008)
+        except Exception:
+            pass
+        try:
+            ps = (
+                f"Start-Sleep -Seconds 2; "
+                f"Stop-Process -Name '{Path(EXE_NAME).stem}' -Force -ErrorAction SilentlyContinue; "
+                f"Remove-Item -LiteralPath '{d}' -Recurse -Force -ErrorAction SilentlyContinue"
+            )
+            subprocess.Popen(["powershell.exe", "-WindowStyle", "Hidden", "-Command", ps],
+                             creationflags=0x08000000 | 0x00000008)
+        except Exception:
+            pass
+
+    # 8. Notify user (unless quiet/silent)
+    if not any(arg in sys.argv for arg in ("--quiet", "--silent")):
+        try:
+            import tkinter as tk
+            from tkinter import messagebox
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showinfo("DeenBG", "DeenBG has been successfully uninstalled from your computer.")
+            root.destroy()
+        except Exception:
+            print("DeenBG has been successfully uninstalled from your computer.")
+    else:
+        print("DeenBG has been successfully uninstalled from your computer.")
+    sys.exit(0)
+
+def _clean_install_dir(d: Path):
+    if not d.exists():
+        return
     try:
-        cmd = f'ping 127.0.0.1 -n 3 > nul & rmdir /s /q "{idir}"'
-        subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000 | 0x00000008)
+        subprocess.run(["taskkill", "/F", "/IM", EXE_NAME], capture_output=True)
+        time.sleep(0.3)
     except Exception:
         pass
-
-    messagebox.showinfo("DeenBG", "DeenBG has been successfully uninstalled from your computer.")
-    sys.exit(0)
+    cur_exe = Path(sys.executable).resolve()
+    for item in list(d.iterdir()):
+        try:
+            if item.resolve() == cur_exe:
+                continue
+            if item.is_dir():
+                shutil.rmtree(item, ignore_errors=True)
+            else:
+                try:
+                    os.chmod(item, 0o777)
+                except Exception:
+                    pass
+                item.unlink(missing_ok=True)
+        except Exception:
+            pass
 
 # ============================================================
 # INSTALLER GUI
@@ -594,12 +724,12 @@ class InstallerApp:
             def _upd(v,ll=vl): ll.configure(text=f"{float(v):.1f}\u00d7")
             ttk.Scale(row,from_=0.5,to=2.0,variable=var,orient="horizontal",command=_upd,length=340).pack(side="left",padx=10)
         sec("BEHAVIOUR")
-        for txt,var in [("Avoid repeating Ayahs (cycles all 6,236 before repeating)",self.avoid_repeats),
-                        ("Save wallpaper PNG files to disk",self.save_wallpapers)]:
+        for txt,var in [("Avoid repeating Ayahs (cycles all 6,236 ayah before repeating)",self.avoid_repeats),
+                        ("Save generated wallpaper PNG files to disk",self.save_wallpapers)]:
             tk.Checkbutton(f,text=txt,variable=var,bg=UI["bg"],fg=UI["text"],selectcolor=UI["card"],
                            activebackground=UI["bg"],activeforeground=UI["text"],font=("Segoe UI",10)).pack(anchor="w",pady=2)
         sec("SCHEDULE")
-        tk.Checkbutton(f,text="Change wallpaper automatically at every login",
+        tk.Checkbutton(f,text="Change wallpaper automatically at every login (Windows Task Scheduler)",
                        variable=self.register_task,bg=UI["bg"],fg=UI["text"],selectcolor=UI["card"],
                        activebackground=UI["bg"],activeforeground=UI["text"],font=("Segoe UI",10)).pack(anchor="w",pady=2)
         ir=tk.Frame(f,bg=UI["bg"]); ir.pack(anchor="w",pady=(4,0))
@@ -683,9 +813,11 @@ class InstallerApp:
             self._unlock_fin()
 
     def _run(self,d):
-        self._log(f"Installing to: {d}"); self._status("Creating directories\u2026",5)
+        self._log(f"Installing to: {d}"); self._status("Cleaning previous installation…",3)
+        _clean_install_dir(d)
+        self._status("Creating directories…",5)
         for sub in ["","fonts","data","wallpapers","cache","logs"]: (d/sub).mkdir(parents=True,exist_ok=True)
-        self._log("  [OK] Directories ready"); self._status("Copying program files\u2026",15)
+        self._log("  [OK] Previous files cleaned, directories ready"); self._status("Copying program files…",15)
         dst=d/EXE_NAME; src=Path(sys.executable); self._log(f"  Copying {src.name} -> {EXE_NAME}")
         try: shutil.copy2(src,dst); self._log(f"  [OK] {EXE_NAME} installed")
         except Exception as e: self._log(f"  [ERR] {e}",UI["error"]); raise
@@ -751,81 +883,231 @@ class InstallerApp:
             return True
         except Exception as e: self._log(f"    DL error: {e}",UI["error"]); return False
 
-    def _reg(self,exe,iv):
-        def _iso(m):
-            h,mn=divmod(m,60)
-            if h and mn: return f"PT{h}H{mn}M"
-            if h: return f"PT{h}H"
-            return f"PT{mn}M"
-        rep=f"\n      <Repetition><Interval>{_iso(iv)}</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition>" if iv else ""
-        xml=(f'<?xml version="1.0" encoding="UTF-16"?>\n<Task version="1.4" '
-             f'xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">\n'
-             f'  <RegistrationInfo><Description>DeenBG Quran wallpaper.</Description></RegistrationInfo>\n'
-             f'  <Triggers><LogonTrigger><Enabled>true</Enabled>{rep}</LogonTrigger></Triggers>\n'
-             f'  <Principals><Principal id="Author"><LogonType>InteractiveToken</LogonType>'
-             f'<RunLevel>LeastPrivilege</RunLevel></Principal></Principals>\n'
-             f'  <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>'
-             f'<DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>'
-             f'<StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>'
-             f'<ExecutionTimeLimit>PT5M</ExecutionTimeLimit><Priority>7</Priority>'
-             f'<StartWhenAvailable>true</StartWhenAvailable></Settings>\n'
-             f'  <Actions Context="Author"><Exec><Command>{exe}</Command>'
-             f'<Arguments>--generate</Arguments><WorkingDirectory>{exe.parent}</WorkingDirectory>'
-             f'</Exec></Actions>\n</Task>')
-        tmp=Path(tempfile.gettempdir())/"_deenbg_task.xml"
-        try:
-            with open(tmp,"w",encoding="utf-16") as tf: tf.write(xml)
-            subprocess.run(["schtasks","/Delete","/TN",TASK_NAME,"/F"],capture_output=True)
-            r=subprocess.run(["schtasks","/Create","/XML",str(tmp),"/TN",TASK_NAME],
-                             capture_output=True,text=True)
-            if r.returncode==0: return True,"Runs at every login"+(f" + every {iv} min" if iv else "")
-
-            # If Task Scheduler returned Access is denied (standard non-admin user),
-            # smoothly fallback to Windows Startup (HKCU Run registry key) - guaranteed no admin needed!
-            try:
-                import winreg
-                k=winreg.OpenKey(winreg.HKEY_CURRENT_USER,r"Software\Microsoft\Windows\CurrentVersion\Run",0,winreg.KEY_SET_VALUE)
-                winreg.SetValueEx(k,TASK_NAME,0,winreg.REG_SZ,f'"{exe}" --generate')
-                winreg.CloseKey(k)
-                return True,"Windows Startup registered (runs at every login)"
-            except Exception:
-                pass
-
-            # Fallback 2: Windows Startup folder shortcut/script
-            try:
-                st=Path(os.environ.get("APPDATA",""))/"Microsoft"/"Windows"/"Start Menu"/"Programs"/"Startup"
-                if st.exists():
-                    with open(st/"DeenBG.cmd","w",encoding="utf-8") as sf:
-                        sf.write(f'@start "" /b "{exe}" --generate\n')
-                    return True,"Windows Startup registered (runs at every login)"
-            except Exception:
-                pass
-
-            return False,r.stderr.strip()
-        finally:
-            try: tmp.unlink()
-            except Exception: pass
+    def _reg(self, exe, iv):
+        return register_scheduled_task(exe, iv)
 
     def _reg_uninstall(self, exe, d):
-        try:
-            import winreg
-            k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG")
-            winreg.SetValueEx(k, "DisplayName", 0, winreg.REG_SZ, "DeenBG")
-            winreg.SetValueEx(k, "DisplayVersion", 0, winreg.REG_SZ, APP_VER)
-            winreg.SetValueEx(k, "Publisher", 0, winreg.REG_SZ, "CyberMajeed")
-            winreg.SetValueEx(k, "DisplayIcon", 0, winreg.REG_SZ, f'"{exe}",0')
-            winreg.SetValueEx(k, "UninstallString", 0, winreg.REG_SZ, f'"{exe}" --uninstall')
-            winreg.SetValueEx(k, "InstallLocation", 0, winreg.REG_SZ, str(d))
-            winreg.SetValueEx(k, "NoModify", 0, winreg.REG_DWORD, 1)
-            winreg.SetValueEx(k, "NoRepair", 0, winreg.REG_DWORD, 1)
-            winreg.SetValueEx(k, "EstimatedSize", 0, winreg.REG_DWORD, 42000)
-            winreg.CloseKey(k)
+        if register_uninstall(exe, d):
             self._log("  [OK] Registered in Control Panel (Installed Apps)")
-        except Exception as e:
-            self._log(f"  [WARN] Control Panel register: {e}", UI["muted"])
+        else:
+            self._log("  [WARN] Could not register in Control Panel", UI["muted"])
 
     def _on_finish(self):
         if self._ok: self.root.destroy()
+
+# ============================================================
+# SCHEDULED TASK & UNINSTALL REGISTRATION (SHARED)
+# ============================================================
+def register_uninstall(exe: Path, d: Path) -> bool:
+    try:
+        import winreg
+        k = winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall\DeenBG")
+        winreg.SetValueEx(k, "DisplayName", 0, winreg.REG_SZ, "DeenBG")
+        winreg.SetValueEx(k, "DisplayVersion", 0, winreg.REG_SZ, APP_VER)
+        winreg.SetValueEx(k, "Publisher", 0, winreg.REG_SZ, "CyberMajeed")
+        winreg.SetValueEx(k, "DisplayIcon", 0, winreg.REG_SZ, f'"{exe}",0')
+        winreg.SetValueEx(k, "UninstallString", 0, winreg.REG_SZ, f'"{exe}" --uninstall')
+        winreg.SetValueEx(k, "InstallLocation", 0, winreg.REG_SZ, str(d))
+        winreg.SetValueEx(k, "NoModify", 0, winreg.REG_DWORD, 1)
+        winreg.SetValueEx(k, "NoRepair", 0, winreg.REG_DWORD, 1)
+        winreg.SetValueEx(k, "EstimatedSize", 0, winreg.REG_DWORD, 42000)
+        winreg.CloseKey(k)
+        return True
+    except Exception:
+        return False
+
+def register_scheduled_task(exe, iv=0):
+    import re
+
+    # Ensure no startup app entries exist so DeenBG runs ONLY from Task Scheduler
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run", 0, winreg.KEY_SET_VALUE) as k:
+            winreg.DeleteValue(k, TASK_NAME)
+    except Exception:
+        pass
+    try:
+        st = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "DeenBG.cmd"
+        if st.exists():
+            st.unlink()
+    except Exception:
+        pass
+
+    # Resolve current user SID so Task Scheduler allows standard non-admin users to register logon tasks
+    sid = ""
+    try:
+        r = subprocess.run(["whoami", "/user"], capture_output=True, text=True, timeout=5)
+        m = re.search(r"(S-1-5-[0-9-]+)", r.stdout)
+        if m:
+            sid = m.group(1)
+    except Exception:
+        pass
+
+    iv_int = int(iv) if str(iv).strip().isdigit() else 0
+
+    def _iso(m):
+        h, mn = divmod(m, 60)
+        if h and mn: return f"PT{h}H{mn}M"
+        if h: return f"PT{h}H"
+        return f"PT{mn}M"
+
+    user_node = f"      <UserId>{sid}</UserId>" if sid else ""
+    p_user = f"\n      <UserId>{sid}</UserId>" if sid else ""
+
+    triggers = [
+        "    <LogonTrigger>\n"
+        "      <Enabled>true</Enabled>\n"
+        f"{user_node}\n"
+        "    </LogonTrigger>"
+    ]
+    if iv_int > 0:
+        now_iso = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        triggers.append(
+            f"    <TimeTrigger>\n"
+            f"      <StartBoundary>{now_iso}</StartBoundary>\n"
+            f"      <Enabled>true</Enabled>\n"
+            f"      <Repetition>\n"
+            f"        <Interval>{_iso(iv_int)}</Interval>\n"
+            f"        <StopAtDurationEnd>false</StopAtDurationEnd>\n"
+            f"      </Repetition>\n"
+            f"    </TimeTrigger>"
+        )
+    triggers_block = "\n".join(triggers)
+
+    xml = (f'<?xml version="1.0" encoding="UTF-16"?>\n'
+           f'<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">\n'
+           f'  <RegistrationInfo><Description>DeenBG Quran wallpaper generator.</Description></RegistrationInfo>\n'
+           f'  <Triggers>\n{triggers_block}\n  </Triggers>\n'
+           f'  <Principals><Principal id="Author">{p_user}\n'
+           f'    <LogonType>InteractiveToken</LogonType>\n'
+           f'  </Principal></Principals>\n'
+           f'  <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>'
+           f'<DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>'
+           f'<StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>'
+           f'<ExecutionTimeLimit>PT5M</ExecutionTimeLimit><Priority>7</Priority>'
+           f'<StartWhenAvailable>true</StartWhenAvailable></Settings>\n'
+           f'  <Actions Context="Author"><Exec><Command>{exe}</Command>'
+           f'<Arguments>--generate</Arguments><WorkingDirectory>{exe.parent}</WorkingDirectory>'
+           f'</Exec></Actions>\n</Task>')
+
+    tmp = Path(tempfile.gettempdir()) / "_deenbg_task.xml"
+    try:
+        with open(tmp, "w", encoding="utf-16") as tf:
+            tf.write(xml)
+
+        subprocess.run(["schtasks", "/Delete", "/TN", TASK_NAME, "/F"], capture_output=True)
+
+        r = subprocess.run(["schtasks", "/Create", "/XML", str(tmp), "/TN", TASK_NAME, "/F"],
+                         capture_output=True, text=True)
+        if r.returncode == 0:
+            desc = "runs at every login" + (f" + every {iv_int} min" if iv_int > 0 else "")
+            return True, f"Task Scheduler: {desc}"
+
+        # If primary name is blocked by an existing admin-owned task, use alternative name
+        alt_name = "DeenBG Wallpaper"
+        subprocess.run(["schtasks", "/Delete", "/TN", alt_name, "/F"], capture_output=True)
+        r2 = subprocess.run(["schtasks", "/Create", "/XML", str(tmp), "/TN", alt_name, "/F"],
+                          capture_output=True, text=True)
+        if r2.returncode == 0:
+            desc = "runs at every login" + (f" + every {iv_int} min" if iv_int > 0 else "")
+            return True, f"Task Scheduler: {desc}"
+
+        return False, f"Task Scheduler error: {r.stderr.strip() or r2.stderr.strip()}"
+    finally:
+        try:
+            tmp.unlink()
+        except Exception:
+            pass
+
+# ============================================================
+# CLI SETUP WIZARD (NO TKINTER FALLBACK)
+# ============================================================
+def _ask_input(prompt: str, default: str = "1") -> str:
+    try:
+        if sys.stdin and hasattr(sys.stdin, "isatty") and sys.stdin.isatty():
+            val = input(prompt).strip()
+            return val if val else default
+    except Exception:
+        pass
+    return default
+
+def run_cli_mode():
+    print("\n" + "=" * 58)
+    print("             DeenBG — Setup Wizard")
+    print("=" * 58)
+    print("  Bismillah ar-Rahman ar-Rahim\n")
+
+    t_keys = list(TRANSLATIONS.keys())
+    print("  Choose English translation:")
+    for i, (k, (name, desc)) in enumerate(TRANSLATIONS.items(), 1):
+        print(f"    {i}. {name} — {desc}")
+    ans = _ask_input("  Your choice [1]: ", "1")
+    idx = int(ans) - 1 if ans.isdigit() and 1 <= int(ans) <= len(t_keys) else 0
+    selected_trans = t_keys[idx]
+
+    th_keys = list(THEMES.keys())
+    print("\n  Choose wallpaper theme:")
+    for i, (k, v) in enumerate(THEMES.items(), 1):
+        print(f"    {i:>2}. {v['name']}")
+    ans = _ask_input("  Your choice [1]: ", "1")
+    tidx = int(ans) - 1 if ans.isdigit() and 1 <= int(ans) <= len(th_keys) else 0
+    selected_theme = th_keys[tidx]
+
+    idir = DEFAULT_INSTALL
+    print(f"\n  Installing to: {idir}")
+    print("  Cleaning previous installation…")
+    _clean_install_dir(idir)
+    for sub in ["", "fonts", "data", "wallpapers", "cache", "logs"]:
+        (idir / sub).mkdir(parents=True, exist_ok=True)
+    print("  [OK] Previous files cleaned, fresh directory ready")
+
+    dst = idir / EXE_NAME
+    src = Path(sys.executable)
+    try:
+        shutil.copy2(src, dst)
+    except Exception:
+        pass
+
+    fs = res("fonts")
+    if fs.exists():
+        for fn in fs.iterdir():
+            shutil.copy2(fn, idir / "fonts" / fn.name)
+
+    qdst = idir / "data" / "quran.json"
+    qsrc = res("data") / "quran.json"
+    if qsrc.exists():
+        shutil.copy2(qsrc, qdst)
+
+    cfg = {
+        "api": {"translation_edition": selected_trans},
+        "design": {
+            "theme": selected_theme, "font_arabic": "Amiri-Regular.ttf",
+            "font_latin": "Lato-Regular.ttf", "decorative_line": True,
+            "font_scale_arabic": 1.0, "font_scale_translation": 1.0
+        },
+        "behavior": {
+            "avoid_repeats": True, "max_cache_size": 6236,
+            "save_wallpapers": True, "max_saved_wallpapers": 40
+        }
+    }
+    with open(idir / "config.json", "w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, indent=2, ensure_ascii=False)
+
+    ok, msg = register_scheduled_task(dst, 0)
+    print(f"\n  [{'OK' if ok else 'WARN'}] {msg}")
+    if register_uninstall(dst, idir):
+        print("  [OK] Registered in Control Panel (Installed Apps)")
+
+    try:
+        subprocess.run([str(dst), "--generate"], capture_output=True, timeout=40)
+        print("  [OK] First wallpaper set!")
+    except Exception:
+        pass
+
+    print("\n" + "=" * 58)
+    print("  Setup Complete!")
+    print(f"  Location: {idir}")
+    print("=" * 58 + "\n")
 
 # ============================================================
 # ENTRY POINT
@@ -836,11 +1118,19 @@ def main():
     elif "--uninstall" in sys.argv:
         run_uninstall_mode()
     else:
-        try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        except Exception:
-            try: ctypes.windll.user32.SetProcessDPIAware()
-            except Exception: pass
-        root=tk.Tk(); InstallerApp(root); root.mainloop()
+        if HAS_TK:
+            try:
+                try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
+                except Exception:
+                    try: ctypes.windll.user32.SetProcessDPIAware()
+                    except Exception: pass
+                root = tk.Tk()
+                InstallerApp(root)
+                root.mainloop()
+                return
+            except Exception:
+                pass
+        run_cli_mode()
 
 if __name__ == "__main__":
     main()
